@@ -6,23 +6,6 @@ from scipy.sparse import csr_matrix
 import scanpy as sc
 from anndata import AnnData
 
-
-def find_key_by_value(dictionary, target_value):
-    for key, value_list in dictionary.items():
-        if target_value in value_list:
-            return key
-    return None
-
-
-def find_keys_for_all_values(annotation_dict, search_dict):
-    result = []
-    for group, genes in search_dict.items():
-        annotations = [find_key_by_value(annotation_dict, gene) for gene in genes]
-        for gene, annotation in zip(genes, annotations):
-            result.append({"group": group, "gene": gene, "annotation": annotation})
-    return result
-
-
 parser = argparse.ArgumentParser(description="Preprocessing Xenium to h5ad.")
 parser.add_argument("input", help="Paths to directory containing Xenium files.")
 parser.add_argument("--output", required=True, help="The output h5ad file path.")
