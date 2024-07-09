@@ -8,6 +8,7 @@ process PREPROCESSING {
 
     output:
     path "${name}.h5ad", emit: preprocessing_h5ad
+    val "${name}", emit: name
 
     script:
     """
