@@ -12,12 +12,10 @@ process QCREPORT {
 
     script:
     """
-    if [ ! -d "/tmp/ipykernel" ]; then
-        mkdir -p "/tmp/ipykernel"
-    fi
-    export HOME=/tmp/ipykernel
-    python -m ipykernel install --user --name postprocessing
-    papermill ${baseDir}/bin/QC.ipynb ${name}_report.ipynb
+    export NUMBA_CACHE_DIR=/tmp/numba_cache
+    papermill ${baseDir}/bin/QC.ipynb ${name}_report.ipynb \
+        -p h5ad ${preprocessing_h5ad} \
+        -p gene_annotation_file ${params.gene_information_file}
     jupyter nbconvert --to html ${name}_report.ipynb
     """
 }
