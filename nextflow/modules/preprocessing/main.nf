@@ -12,7 +12,7 @@ process PREPROCESSING {
 
     script:
     """
-    export NUMBA_CACHE_DIR=/tmp/numba_cache
+    export NUMBA_CACHE_DIR=/tmp/
     python ${baseDir}/bin/preprocessing.py \
         ${xenium_folder} \
         --output ${name}.h5ad
