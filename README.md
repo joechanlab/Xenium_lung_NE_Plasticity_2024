@@ -1,6 +1,6 @@
 # Xenium Lung NE Plasticity 
 
-This repository contains the scripts and notebooks to analyze Xenium data for lung NE plasticity project. 
+This repository contains the nextflow pipeline and scripts to analyze Xenium data for lung NE plasticity project. 
 
 ## Usage
 
