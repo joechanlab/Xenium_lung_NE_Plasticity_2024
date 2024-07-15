@@ -8,10 +8,11 @@ process PREPROCESSING {
 
     output:
     path "${name}.h5ad", emit: preprocessing_h5ad
+    val "${name}", emit: name
 
     script:
     """
-    export NUMBA_CACHE_DIR=/tmp/numba_cache
+    export NUMBA_CACHE_DIR=/tmp/
     python ${baseDir}/bin/preprocessing.py \
         ${xenium_folder} \
         --output ${name}.h5ad

@@ -15,6 +15,8 @@ args = parser.parse_args()
 transcripts = pd.read_parquet(os.path.join(args.input, "transcripts.parquet"))
 cells = pd.read_parquet(os.path.join(args.input, "cells.parquet"))
 
+os.environ["NUMBA_CACHE_DIR"] = "/tmp/"
+
 # Filter for transcripts with QV score >= 20
 # https://www.10xgenomics.com/support/software/xenium-onboard-analysis/latest/algorithms-overview/xoa-algorithms#qvs
 QV_CUTOFF = 20

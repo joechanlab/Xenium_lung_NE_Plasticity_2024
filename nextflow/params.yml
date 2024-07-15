@@ -1,8 +1,0 @@
-samplesheet: "../results/samplesheet.csv"
-outdir: "../results/"
-experiment:
-    name: "Xenium_lung_NE_Plasticity_2024"
-with_gpu: true
-max_memory: "36.GB"
-max_cpus: 6
-maxForks: 2
