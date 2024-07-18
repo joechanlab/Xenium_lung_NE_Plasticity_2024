@@ -3,6 +3,7 @@
 nextflow.enable.dsl = 2
 
 include {PREPROCESSING} from './modules/preprocessing'
+include {SVG} from './modules/SVG'
 include {QCREPORT} from './modules/QC'
 
 workflow {
@@ -22,6 +23,9 @@ workflow {
     // run preprocessing
     PREPROCESSING(ch_input)
 
+    // run SVG
+    SVG(PREPROCESSING.out.preprocessing_h5ad, PREPROCESSING.out.name)
+
     // generate QC report
-    QCREPORT(PREPROCESSING.out.preprocessing_h5ad, PREPROCESSING.out.name)
+    QCREPORT(SVG.out.SVG_h5ad, SVG.out.name)
 }

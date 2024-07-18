@@ -12,7 +12,8 @@ process PREPROCESSING {
 
     script:
     """
-    export NUMBA_CACHE_DIR=/tmp/
+    export NUMBA_CACHE_DIR=${workDir}
+    export MPLCONFIGDIR=${workDir}
     python ${baseDir}/bin/preprocessing.py \
         ${xenium_folder} \
         --output ${name}.h5ad

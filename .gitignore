@@ -165,3 +165,4 @@ work/
 results/
 .nextflow/
 .nextflow.log*
+*.sif

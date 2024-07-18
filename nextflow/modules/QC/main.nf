@@ -1,5 +1,5 @@
 process QCREPORT {
-    label 'process_low'
+    label 'process_medium'
     container "library://mamie_wang/nf-scrnaseq/postprocessing.sif:latest"
     publishDir "${params.outdir}/report/", mode: 'copy'
 
@@ -12,7 +12,8 @@ process QCREPORT {
 
     script:
     """
-    export NUMBA_CACHE_DIR=/tmp/numba_cache
+    export NUMBA_CACHE_DIR=${workDir}
+    export MPLCONFIGDIR=${workDir}
     papermill ${baseDir}/bin/QC.ipynb ${name}_report.ipynb \
         -p h5ad ${preprocessing_h5ad} \
         -p gene_annotation_file ${params.QC.gene_information_file} \
