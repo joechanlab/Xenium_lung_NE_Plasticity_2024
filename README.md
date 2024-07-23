@@ -19,10 +19,15 @@ Next, prepare a parameter YAML file that looks as follows:
 
 `params.yml`:
 ```yaml
-samplesheet: "../results/samplesheet.csv"     # path to the sample sheet
-outdir: "../results/"                         # output folder
-max_memory: "36.GB"                           # memory
-max_cpus: 6                                   # cpu
+samplesheet: "../results/samplesheet.csv"             # path to the sample sheet
+outdir: "../results/"                                 # output folder
+experiment:
+  name: "Xenium"
+QC:
+  gene_information_file: "../data/annotation.csv"     # gene annotation file
+  extra_markers: "PHOX2B"                             # custom markers to plot
+max_memory: "36.GB"                                   # memory
+max_cpus: 6                                           # cpu
 ```
 
 Now, you can run the pipeline. For local run on HPC with singularity installed, execute the following command
