@@ -1,15 +1,20 @@
 #!/usr/bin/env python3
 import argparse
+import numpy as np
+import pandas as pd
 import scanpy as sc
 import scenvi
-import numpy as np
+import pickle
+# from scenvi.utils import compute_covet
 
 parser = argparse.ArgumentParser(description="ENVI to integrate paired scRNAseq and spatial data.")
 parser.add_argument("st_path", help="Paths to single-cell RNAseq data h5ad.")
 parser.add_argument("sc_path", help="Path to spatial data h5ad.")
 parser.add_argument("st_outpath", help="Output path to single-cell RNAseq data h5ad.")
 parser.add_argument("sc_outpath", help="Output path to spatial data h5ad.")
-parser.add_argument("--downsample", help="Downsample data to this number of cells.", default=None, type=int)
+parser.add_argument("model_outpath", help="Output path to model data checkpoint.")
+parser.add_argument("--patient", help="Patient to subset.", default="None")
+parser.add_argument("--downsample", help="Downsample data to this number of cells.", default="None")
 args = parser.parse_args()
 
 # Downsample data
@@ -25,21 +30,31 @@ def downsample(adata, num_cells = 10000):
 print('Loading data...')
 st_data = sc.read_h5ad(args.st_path)
 sc_data = sc.read_h5ad(args.sc_path)
-
-# Downsample data
-if args.downsample is not None:
-    print('Downsampling data...')
-    st_data = downsample(st_data, args.downsample)
-    sc_data = downsample(sc_data, args.downsample)
+if args.patient != "None":
+    print(f'Filtering for the patient {args.patient}')
+    sc_data = sc_data[sc_data.obs['patient']== args.patient]
 
 # Preprocess data
 print('Preprocessing data...')
-if 'counts' not in sc_data.layers:
-    sc_data.layers['counts'] = sc_data.raw.X.copy()
-if 'counts' not in st_data.layers:
-    st_data.layers['counts'] = st_data.raw.X.copy()
-sc_data.layers['log'] = np.log(sc_data.layers['counts'].toarray() + 1)
-st_data.layers['log'] = np.log(st_data.layers['counts'].toarray() + 1)
+sc_data.X = sc_data.raw.X.copy()
+st_data.X = st_data.layers['counts']
+
+if isinstance(sc_data.X, np.ndarray):
+    sc_data.layers['log'] = np.log(sc_data.X + 1)
+else:
+    sc_data.layers['log'] = np.log(sc_data.X.toarray() + 1)
+
+if isinstance(st_data.X, np.ndarray):
+    st_data.layers['log'] = np.log(st_data.X + 1)
+else:
+    st_data.layers['log'] = np.log(st_data.X.toarray() + 1)
+
+# Downsample data
+if args.downsample != "None":
+    print('Downsampling data...')
+    st_data_raw = st_data.copy()
+    st_data = downsample(st_data, int(args.downsample))
+    sc_data = downsample(sc_data, int(args.downsample))
 
 # ENVI Integration
 print('Training ENVI...')
@@ -54,17 +69,32 @@ envi_model.infer_niche_covet()
 
 # Save results
 print('Saving results...')
-st_data.obsm['envi_latent'] = envi_model.spatial_data.obsm['envi_latent']
-st_data.obsm['COVET'] = envi_model.spatial_data.obsm['COVET']
-st_data.obsm['COVET_SQRT'] = envi_model.spatial_data.obsm['COVET_SQRT']
-st_data.uns['COVET_genes'] =  envi_model.CovGenes
-st_data.obsm['imputation'] = envi_model.spatial_data.obsm['imputation']
-
 sc_data.obsm['envi_latent'] = envi_model.sc_data.obsm['envi_latent']
 sc_data.obsm['COVET'] = envi_model.sc_data.obsm['COVET']
 sc_data.obsm['COVET_SQRT'] = envi_model.sc_data.obsm['COVET_SQRT']
 sc_data.uns['COVET_genes'] =  envi_model.CovGenes
-
-st_data.write(args.st_outpath)
 sc_data.write(args.sc_outpath)
-print(f'Results saved at {args.st_outpath} and {args.sc_outpath}')
+
+if args.downsample != "None":
+    st_data_raw.obsm['envi_latent'] = envi_model.encode(st_data_raw[:,list(envi_model.overlap_genes)].layers['log'], 
+                                                        mode = 'spatial')
+    # st_data_raw.uns['COVET_genes'] =  envi_model.CovGenes
+    # st_data.obsm['imputation'] = pd.DataFrame(
+    #         envi_model.decode_exp(st_data_raw.obsm["envi_latent"], mode="sc"),
+    #         columns=envi_model.sc_data.var_names,
+    #         index=envi_model.spatial_data.obs_names,
+    #     )
+    st_data_raw.write(args.st_outpath)
+else:
+    st_data.obsm['envi_latent'] = envi_model.spatial_data.obsm['envi_latent']
+    st_data.obsm['COVET'] = envi_model.spatial_data.obsm['COVET']
+    st_data.obsm['COVET_SQRT'] = envi_model.spatial_data.obsm['COVET_SQRT']
+    st_data.uns['COVET_genes'] =  envi_model.CovGenes
+    st_data.obsm['imputation'] = envi_model.spatial_data.obsm['imputation']
+    st_data.write(args.st_outpath)
+
+# Save model parameters
+with open(args.model_outpath, 'wb') as pickle_file:
+    pickle.dump(envi_model.params, pickle_file)
+
+print(f'Results saved at {args.st_outpath}, {args.sc_outpath} and {args.model_outpath}.')
