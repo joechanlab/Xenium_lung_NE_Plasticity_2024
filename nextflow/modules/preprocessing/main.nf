@@ -18,6 +18,7 @@ process PREPROCESSING {
     export MPLCONFIGDIR=${workDir}
     python ${baseDir}/bin/preprocessing.py \
         ${xenium_folder} \
-        --output ${name}.h5ad
+        --output ${name}.h5ad \
+        --sample_name ${name}
     """
 }

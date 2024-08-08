@@ -15,7 +15,7 @@ parser.add_argument("st_outpath", help="Output path to single-cell RNAseq data h
 parser.add_argument("sc_outpath", help="Output path to spatial data h5ad.")
 parser.add_argument("model_outpath", help="Output path to model data checkpoint.")
 parser.add_argument("--patient", help="Patient to subset.", default="None")
-parser.add_argument("--downsample", help="Downsample data to this number of cells.", default="None")
+parser.add_argument("--downsample", help="Downsample data to this number of cells.", type = int, default=50000)
 parser.add_argument("--celltype", help="Cell type column name in scRNAseq.", default="None")
 parser.add_argument("--k", help="Number of neighbors for KNN.", default=30)
 args = parser.parse_args()
@@ -37,8 +37,13 @@ if args.patient != "None":
     print(f'Filtering for the patient {args.patient}')
     sc_data = sc_data[sc_data.obs['patient']== args.patient]
 
+# Remove outliers
+st_data = st_data[~st_data.obs["outlier"],:].copy()
+
 # Preprocess data
 print('Preprocessing data...')
+sc_data.layers['norm'] = sc_data.X.copy()
+st_data.layers['norm'] = st_data.X.copy()
 sc_data.X = sc_data.raw.X.copy()
 st_data.X = st_data.layers['counts']
 
@@ -53,7 +58,7 @@ else:
     st_data.layers['log'] = np.log(st_data.X.toarray() + 1)
 
 # Downsample data
-if args.downsample != "None":
+if st_data.shape[0] > args.downsample:
     print('Downsampling data...')
     st_data_raw = st_data.copy()
     st_data = downsample(st_data, int(args.downsample))
@@ -76,6 +81,8 @@ sc_data.obsm['envi_latent'] = envi_model.sc_data.obsm['envi_latent']
 sc_data.obsm['COVET'] = envi_model.sc_data.obsm['COVET']
 sc_data.obsm['COVET_SQRT'] = envi_model.sc_data.obsm['COVET_SQRT']
 sc_data.uns['COVET_genes'] =  envi_model.CovGenes
+sc_data.X = sc_data.layers['norm']
+del sc_data.layers['norm']
 sc_data.write(args.sc_outpath)
 
 if args.downsample != "None":
@@ -98,10 +105,17 @@ else:
 if args.celltype != "None":
     print('Predicting cell types...')
     knn = KNeighborsClassifier(n_neighbors=args.k)
-    knn.fit(sc_data.obsm['envi_latent'], sc_data.obs[args.celltype])
+    celltype = args.celltype.split(',')
+    celltype_match = None
+    for ct in celltype:
+        if ct in sc_data.obs.columns:
+            celltype_match = ct
+            break
+    knn.fit(sc_data.obsm['envi_latent'], sc_data.obs[celltype_match])
     st_data_cell_type = knn.predict(st_data.obsm['envi_latent'])
     st_data.obs['cell_type_predicted'] = st_data_cell_type
-
+st_data.X = st_data.layers['norm']
+del st_data.layers['norm']
 st_data.write(args.st_outpath)
 
 # Save model parameters
