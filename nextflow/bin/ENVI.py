@@ -58,8 +58,10 @@ else:
     st_data.layers['log'] = np.log(st_data.X.toarray() + 1)
 
 # Downsample data
+downsampled = False
 if st_data.shape[0] > args.downsample:
     print('Downsampling data...')
+    downsampled = True
     st_data_raw = st_data.copy()
     st_data = downsample(st_data, int(args.downsample))
     sc_data = downsample(sc_data, int(args.downsample))
@@ -85,7 +87,7 @@ sc_data.X = sc_data.layers['norm']
 del sc_data.layers['norm']
 sc_data.write(args.sc_outpath)
 
-if args.downsample != "None":
+if downsampled:
     st_data_raw.obsm['envi_latent'] = envi_model.encode(st_data_raw[:,list(envi_model.overlap_genes)].layers['log'], 
                                                         mode = 'spatial')
     # st_data_raw.uns['COVET_genes'] =  envi_model.CovGenes
