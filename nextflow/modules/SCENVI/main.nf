@@ -7,7 +7,6 @@ process SCENVI {
     input:
     path st_h5ad
     path sc_h5ad
-    val downsample
     val name
 
     output:

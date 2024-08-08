@@ -19,8 +19,7 @@ workflow {
         def name = row[0]
         def st_path = file(row[1])
         def sc_path = file(row[2])
-        def downsample = row[3]
-        return tuple(name, st_path, sc_path, downsample)
+        return tuple(name, st_path, sc_path)
     }
 
     // run preprocessing
@@ -29,14 +28,12 @@ workflow {
     // run SVG
     SVG(PREPROCESSING.out.preprocessing_h5ad, 
         PREPROCESSING.out.sc_h5ad,
-        PREPROCESSING.out.downsample,
         PREPROCESSING.out.name
         )
 
     // run ENVI
     SCENVI(SVG.out.SVG_h5ad, 
         SVG.out.sc_h5ad,
-        SVG.out.downsample,
         SVG.out.name
         )
 

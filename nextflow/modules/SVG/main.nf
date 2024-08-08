@@ -6,13 +6,11 @@ process SVG {
     input:
     path preprocessing_h5ad
     val sc_h5ad
-    val downsample
     val name
 
     output:
     path "${name}_SVG.h5ad", emit: SVG_h5ad
     val "${sc_h5ad}", emit: sc_h5ad
-    val "${downsample}", emit: downsample
     val "${name}", emit: name
 
     script:
