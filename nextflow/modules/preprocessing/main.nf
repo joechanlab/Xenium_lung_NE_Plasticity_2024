@@ -4,10 +4,12 @@ process PREPROCESSING {
     publishDir "${params.outdir}/preprocessing/", mode: 'copy'
 
     input:
-    tuple val(name), path(xenium_folder)
+    tuple val(name), path(xenium_folder), val(sc_path), val(downsample)
 
     output:
     path "${name}.h5ad", emit: preprocessing_h5ad
+    val "${sc_path}", emit: sc_h5ad
+    val "${downsample}", emit: downsample
     val "${name}", emit: name
 
     script:

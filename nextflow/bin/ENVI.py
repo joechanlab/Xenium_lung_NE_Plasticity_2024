@@ -6,6 +6,7 @@ import scanpy as sc
 import scenvi
 import pickle
 # from scenvi.utils import compute_covet
+from sklearn.neighbors import KNeighborsClassifier
 
 parser = argparse.ArgumentParser(description="ENVI to integrate paired scRNAseq and spatial data.")
 parser.add_argument("st_path", help="Paths to single-cell RNAseq data h5ad.")
@@ -15,6 +16,8 @@ parser.add_argument("sc_outpath", help="Output path to spatial data h5ad.")
 parser.add_argument("model_outpath", help="Output path to model data checkpoint.")
 parser.add_argument("--patient", help="Patient to subset.", default="None")
 parser.add_argument("--downsample", help="Downsample data to this number of cells.", default="None")
+parser.add_argument("--celltype", help="Cell type column name in scRNAseq.", default="None")
+parser.add_argument("--k", help="Number of neighbors for KNN.", default=30)
 args = parser.parse_args()
 
 # Downsample data
@@ -84,14 +87,22 @@ if args.downsample != "None":
     #         columns=envi_model.sc_data.var_names,
     #         index=envi_model.spatial_data.obs_names,
     #     )
-    st_data_raw.write(args.st_outpath)
+    st_data = st_data_raw
 else:
     st_data.obsm['envi_latent'] = envi_model.spatial_data.obsm['envi_latent']
     st_data.obsm['COVET'] = envi_model.spatial_data.obsm['COVET']
     st_data.obsm['COVET_SQRT'] = envi_model.spatial_data.obsm['COVET_SQRT']
     st_data.uns['COVET_genes'] =  envi_model.CovGenes
     st_data.obsm['imputation'] = envi_model.spatial_data.obsm['imputation']
-    st_data.write(args.st_outpath)
+
+if args.celltype != "None":
+    print('Predicting cell types...')
+    knn = KNeighborsClassifier(n_neighbors=args.k)
+    knn.fit(sc_data.obsm['envi_latent'], sc_data.obs[args.celltype])
+    st_data_cell_type = knn.predict(st_data.obsm['envi_latent'])
+    st_data.obs['cell_type_predicted'] = st_data_cell_type
+
+st_data.write(args.st_outpath)
 
 # Save model parameters
 with open(args.model_outpath, 'wb') as pickle_file:
