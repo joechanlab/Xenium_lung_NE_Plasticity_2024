@@ -167,3 +167,4 @@ results/
 .nextflow.log*
 *.sif
 ENVI/
+data
