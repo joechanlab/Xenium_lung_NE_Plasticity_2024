@@ -5,6 +5,7 @@ nextflow.enable.dsl = 2
 include {PREPROCESSING} from './modules/preprocessing'
 include {SVG} from './modules/SVG'
 include {SCENVI} from './modules/SCENVI'
+include {LABELTRANSFER} from './modules/labeltransfer'
 include {QCREPORT} from './modules/QC_report'
 
 workflow {
@@ -36,7 +37,15 @@ workflow {
         SVG.out.sc_h5ad,
         SVG.out.name
         )
+    
+    // run label transfer
+    LABELTRANSFER(SCENVI.out.envi_st_h5ad,
+        SCENVI.out.envi_sc_h5ad,
+        SCENVI.out.name
+        )
 
     // generate QC report
-    QCREPORT(SCENVI.out.envi_st_h5ad, SCENVI.out.name)
+    QCREPORT(LABELTRANSFER.out.labeled_st_h5ad, 
+        LABELTRANSFER.out.name
+        )
 }

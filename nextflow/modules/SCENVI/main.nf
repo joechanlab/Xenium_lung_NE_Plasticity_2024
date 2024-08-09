@@ -25,7 +25,6 @@ process SCENVI {
         ${name}_ENVI_ST.h5ad \
         ${name}_ENVI_SC.h5ad \
         ${name}_ENVI_model.pkl \
-        --downsample ${params.SCENVI.downsample} \
-        --celltype ${params.SCENVI.celltype}
+        --downsample ${params.SCENVI.downsample}
     """
 }
