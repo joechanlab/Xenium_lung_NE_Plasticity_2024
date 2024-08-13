@@ -13,6 +13,7 @@ process SCENVI {
     path "${name}_ENVI_ST.h5ad", emit: envi_st_h5ad
     path "${name}_ENVI_SC.h5ad", emit: envi_sc_h5ad
     path "${name}_ENVI_model.pkl", emit: envi_model_pkl
+    path "${name}_ENVI_ST_imputation.h5ad", emit: envi_st_imputation_h5ad
     val "${name}", emit: name
 
     script:
@@ -25,6 +26,8 @@ process SCENVI {
         ${name}_ENVI_ST.h5ad \
         ${name}_ENVI_SC.h5ad \
         ${name}_ENVI_model.pkl \
-        --downsample ${params.SCENVI.downsample}
+        ${name}_ENVI_ST_imputation.h5ad \
+        --downsample ${params.SCENVI.downsample} \
+        --HVG ${params.SCENVI.HVG}
     """
 }
