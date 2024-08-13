@@ -74,6 +74,8 @@ print('Training ENVI...')
 envi_model = scenvi.ENVI(st_data, sc_data, num_HVG = args.HVG)
 envi_model.train()
 
+sc_data.obsm['envi_latent'] = envi_model.sc_data.obsm['envi_latent']
+
 if downsampled:
     print(f'Encoding on all {st_data.shape[0]} cells...')
     st_data = st_data_raw
