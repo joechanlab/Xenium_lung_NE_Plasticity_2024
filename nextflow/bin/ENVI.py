@@ -104,10 +104,10 @@ st_data.X = st_data.layers['norm']
 del st_data.layers['norm']
 st_data.write(args.st_outpath)
 
-with open(args.imputation_outpath, 'wb') as pickle_file:
-    pickle.dump(imputation, pickle_file)
-
 with open(args.model_outpath, 'wb') as pickle_file:
     pickle.dump(envi_model.params, pickle_file)
 
-print(f'Results saved at {args.st_outpath}, {args.sc_outpath} and {args.model_outpath}.')
+with open(args.imputation_outpath, 'wb') as pickle_file:
+    pickle.dump(imputation, pickle_file)
+
+print(f'Results saved at {args.st_outpath}, {args.sc_outpath}, {args.model_outpath}, and {args.imputation_outpath}.')
