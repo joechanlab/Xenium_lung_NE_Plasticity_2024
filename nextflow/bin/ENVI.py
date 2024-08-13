@@ -31,7 +31,7 @@ def downsample(adata, num_cells = 10000):
 print('Loading data...')
 st_data = sc.read_h5ad(args.st_path)
 sc_data = sc.read_h5ad(args.sc_path)
-if 'high_variable' in sc_data.var.columns:
+if 'highly_variable' in sc_data.var.columns:
     del sc_data.var['highly_variable']
 
 if args.patient != "None":
@@ -83,7 +83,7 @@ if downsampled:
     if not isinstance(st_X, np.ndarray):
         st_X = st_X.toarray()
     st_data.obsm['envi_latent'] = envi_model.encode(st_X, mode = 'spatial')
-    envi_model.spatial_data = st_data
+    envi_model.spatial_data = st_data.copy()
 else:
     st_data.obsm['envi_latent'] = envi_model.spatial_data.obsm['envi_latent']
 
