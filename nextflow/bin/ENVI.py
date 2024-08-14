@@ -1,10 +1,12 @@
 #!/usr/bin/env python3
+import os
 import argparse
 import numpy as np
 import pandas as pd
 import scanpy as sc
 import scenvi
 import pickle
+import jax
 
 parser = argparse.ArgumentParser(description="ENVI to integrate paired scRNAseq and spatial data.")
 parser.add_argument("st_path", help="Paths to single-cell RNAseq data h5ad.")
@@ -31,8 +33,6 @@ def downsample(adata, num_cells = 10000):
 print('Loading data...')
 st_data = sc.read_h5ad(args.st_path)
 sc_data = sc.read_h5ad(args.sc_path)
-if 'highly_variable' in sc_data.var.columns:
-    del sc_data.var['highly_variable']
 
 if args.patient != "None":
     print(f'Filtering for the patient {args.patient}')
@@ -61,6 +61,12 @@ if isinstance(st_data.X, np.ndarray):
 else:
     st_data.layers['log'] = np.log(st_data.X.toarray() + 1)
 
+sc.pp.highly_variable_genes(sc_data, n_top_genes=args.HVG, layer="log")
+marker_genes_df = sc.get.rank_genes_groups_df(sc_data, group = None, log2fc_min = 1, pval_cutoff = 0.05)
+marker_genes_df = marker_genes_df.sort_values(['group', 'scores'], ascending=False).groupby('group').head(100)
+marker_genes = marker_genes_df.names.unique()
+sc_data.var['highly_variable'][marker_genes] = True
+
 # Downsample data
 downsampled = False
 if st_data.shape[0] > args.downsample:
@@ -71,11 +77,20 @@ if st_data.shape[0] > args.downsample:
 
 # ENVI Integration
 print('Training ENVI...')
-envi_model = scenvi.ENVI(st_data, sc_data, num_HVG = args.HVG)
+envi_model = scenvi.ENVI(st_data, sc_data)
 envi_model.train()
+with open(args.model_outpath, 'wb') as pickle_file:
+    print("Saved model to ", args.model_outpath)
+    pickle.dump(envi_model.params, pickle_file)
 
+print("Saving single-cell RNAseq data to ", args.sc_outpath)
 sc_data.obsm['envi_latent'] = envi_model.sc_data.obsm['envi_latent']
+sc_data.X = sc_data.layers['norm']
+del sc_data.layers['norm']
+sc_data.write(args.sc_outpath)
+del sc_data
 
+print("Saving spatial data to ", args.sc_outpath)
 if downsampled:
     print(f'Encoding on all {st_data.shape[0]} cells...')
     st_data = st_data_raw
@@ -87,27 +102,21 @@ if downsampled:
 else:
     st_data.obsm['envi_latent'] = envi_model.spatial_data.obsm['envi_latent']
 
-print('Imputing genes...')
-envi_model.impute_genes()
-imputation = envi_model.spatial_data.obsm['imputation']
-
-# print('Inferring niche covariates...')
-# st_data.obsm['COVET'], st_data.obsm['COVET_SQRT'], st_data.uns['CovGenes'] = scenvi.compute_covet(st_data)
-
-# Save results
-print('Saving results...')
-sc_data.X = sc_data.layers['norm']
-del sc_data.layers['norm']
-sc_data.write(args.sc_outpath)
-
 st_data.X = st_data.layers['norm']
 del st_data.layers['norm']
 st_data.write(args.st_outpath)
+del st_data
 
-with open(args.model_outpath, 'wb') as pickle_file:
-    pickle.dump(envi_model.params, pickle_file)
-
+print('Imputing genes...')
+st_envi_latent = envi_model.spatial_data.obsm["envi_latent"].copy()
+var_names = envi_model.sc_data.var_names
+obs_names = envi_model.spatial_data.obs_names
+del envi_model.spatial_data
+imputation = pd.DataFrame(envi_model.decode_exp(st_envi_latent, 
+                                                mode="sc", 
+                                                max_batch = 128),
+                                                columns=var_names, 
+                                                index=obs_names)
 with open(args.imputation_outpath, 'wb') as pickle_file:
     pickle.dump(imputation, pickle_file)
-
-print(f'Results saved at {args.st_outpath}, {args.sc_outpath}, {args.model_outpath}, and {args.imputation_outpath}.')
+    print("Saved imputed spatial data to ", args.imputation_outpath)

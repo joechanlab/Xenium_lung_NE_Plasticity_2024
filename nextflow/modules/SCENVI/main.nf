@@ -27,7 +27,6 @@ process SCENVI {
         ${name}_ENVI_SC.h5ad \
         ${name}_ENVI_ST_imputation.pkl \
         ${name}_ENVI_model.pkl \
-        --downsample ${params.SCENVI.downsample} \
-        --HVG ${params.SCENVI.HVG}
+        --downsample ${params.SCENVI.downsample}
     """
 }
