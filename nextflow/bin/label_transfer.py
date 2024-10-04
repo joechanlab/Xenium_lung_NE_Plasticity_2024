@@ -17,14 +17,18 @@ args = parser.parse_args()
 print('Loading data...')
 st_data = sc.read_h5ad(args.st_path)
 sc_data = sc.read_h5ad(args.sc_path)
-cell_type_data = pd.read_table(args.celltype_path, sep='\t', header=0, index_col=0)
-celltype = args.celltype.split(',')
-celltype_match = None
-for ct in celltype:
-    if ct in cell_type_data.columns:
-        celltype_match = ct
-        break
-sc_data.obs[celltype_match] = cell_type_data.loc[sc_data.obs_names, celltype_match]
+
+if args.celltype_path != "None":
+    cell_type_data = pd.read_table(args.celltype_path, sep='\t', header=0, index_col=0)
+    celltype = args.celltype.split(',')
+    celltype_match = None
+    for ct in celltype:
+        if ct in cell_type_data.columns:
+            celltype_match = ct
+            break
+    sc_data.obs[celltype_match] = cell_type_data.loc[sc_data.obs_names, celltype_match]
+else:
+    celltype_match = args.celltype
 
 # Preprocess data
 print(f'Predicting cell types from the `{celltype_match}` column...')
