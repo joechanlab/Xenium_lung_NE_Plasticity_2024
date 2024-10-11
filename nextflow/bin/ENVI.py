@@ -46,7 +46,10 @@ print('Preprocessing data...')
 sc_data.layers['norm'] = sc_data.X.copy()
 st_data.layers['norm'] = st_data.X.copy()
 # Input matrices are normalized but not log-transformed
-sc_data.X = sc_data.raw.X.copy() 
+if sc_data.raw is None:
+    sc_data.X = sc_data.layers['counts']
+else:
+    sc_data.X = sc_data.raw.X.copy() 
 sc.pp.normalize_total(sc_data, inplace=True, target_sum=10**4)
 st_data.X = st_data.layers['counts']
 sc.pp.normalize_total(st_data, inplace=True, target_sum=10**4)

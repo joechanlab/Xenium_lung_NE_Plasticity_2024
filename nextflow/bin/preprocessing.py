@@ -13,10 +13,11 @@ from typing import Optional, Callable
 
 parser = argparse.ArgumentParser(description="Preprocessing Xenium to h5ad.")
 parser.add_argument("input", help="Paths to directory containing Xenium files.")
-parser.add_argument("--output", required=True, help="The output h5ad file path.")
+parser.add_argument("output", help="The output h5ad file path.")
 parser.add_argument(
     "--sample_name", default="sample_name", help="The sample column name."
 )
+parser.add_argument("--n_pca", default=200, help="The numbers of PC.")
 args = parser.parse_args()
 
 # Definitions of helper functions
@@ -167,7 +168,7 @@ calculate_group_featcount_dist(adata, group_key='sample_name')
 designate_outliers(adata, condition=default_filter, group_key='sample_name')
 
 # Processing
-sc.pp.pca(adata)
+sc.pp.pca(adata, n_comps=args.n_pca)
 sc.pp.neighbors(adata)
 sc.tl.umap(adata)
 sc.tl.leiden(adata)
